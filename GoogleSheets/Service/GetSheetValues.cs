@@ -1,64 +1,104 @@
 ﻿using Google.Apis.Auth.OAuth2;
 using Google.Apis.Services;
 using Google.Apis.Sheets.v4;
-using Google.Apis.Sheets.v4.Data;
 using Google.Apis.Util.Store;
-using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading;
 
 namespace GoogleSheets.Service
 {    
-    class GetSheetValues
+    internal static class GetSheetValues
     {
-        static string[] Scopes = { SheetsService.Scope.SpreadsheetsReadonly };
-        static string ApplicationName = "Google Sheets API.NET";
-        
-        //ЭТОТ МЕТОД ПРИНИМАЕТ АДРЕС ТАБЛИЦЫ И ДИАПАЗОН ИЗ КОТОРОГО НУЖНО ПОЛУЧИТЬ ДАННЫЕ И ВОЗВРАЩАЕТ СПИСОК ОБЪЕКТОВ
-        public static IList<IList<Object>> GetValueList(string sheetURL, string startRow)
+        private static readonly string[] Scopes = { SheetsService.Scope.SpreadsheetsReadonly };
+        private const string ApplicationName = "Google Sheets API.NET";
+        private static SheetsService _service;
+
+
+        /// <summary>
+        /// Получает данные из таблицы GoogleSheets в виде списка списков обьектов object, которые представляют данные таблицы.
+        /// </summary>
+        /// <param name="sheetUrl">АДРЕС GOOGLE ТАБЛИЦЫ</param>
+        /// <param name="startRow">ДИАПАЗОН ИЗ КОТОРОГО НУЖНО ПОЛУЧИТЬ ДАННЫЕ</param>
+        /// <returns>Список списков объектов object, которые представляют данные таблицы</returns>
+        public static IList<IList<object>> GetValueList(string sheetUrl, string startRow)
+        {
+            if (_service == null)
+            {
+                _service = GetGoogleService();
+            }
+
+            if (startRow.Equals("1"))
+            {
+                return GetValues(sheetUrl, startRow);
+            }
+
+            var title = GetTitle(sheetUrl);
+            var values = GetValues(sheetUrl, startRow);
+
+            foreach (var value in values)
+            {
+                title.Add(value);
+            }
+            return title;
+        }
+
+
+        /// <summary>
+        /// Авторизация в Google таблицах. Тут есть обращение к полученному от гугла credentials.json (читай readme)
+        /// При первой успешной авторизации автоматически сохраняется файл token.json. В последующем авторизация не требуется.
+        /// </summary>
+        /// <returns>GoogleSheetsService - сервис работы с гугл таблицами, необходимый для доступа к ним.</returns>
+        private static SheetsService GetGoogleService()
         {
             UserCredential credential;
-            string rangeData = "A" + startRow + ":ZZZ"; // это диапазон запроса данных из таблицы. Если нужна вся таблица то "A1:ZZZ" Взять всё начиная со столбца А строки 1 и до максимально возможного столбца ZZZ включительно.
-
-
-            // Это блок авторизации в Google таблицах. Тут есть обращение к полученному от гугла credentials.json (читай readme)
             using (var stream =
                 new FileStream("credentials.json", FileMode.Open, FileAccess.Read))
             {
-                // При первой успешной авторизации автоматически сохраняется файл token.json. В последующем авторизация не требуется. 
-                string credPath = "token.json";
+                const string credPath = "token.json";
                 credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
                     GoogleClientSecrets.Load(stream).Secrets,
                     Scopes,
                     "user",
                     CancellationToken.None,
                     new FileDataStore(credPath, true)).Result;
-                Console.WriteLine("Credential file saved to: " + credPath);
             }
-
-            // Create Google Sheets API service.
             var service = new SheetsService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
                 ApplicationName = ApplicationName,
             });
+            return service;
+        }
 
-            // Определение параметров запроса. 
-            SpreadsheetsResource.ValuesResource.GetRequest requestTitle = service.Spreadsheets.Values.Get(sheetURL, "A1:ZZZ1");
-            ValueRange responseTitle = requestTitle.Execute(); // получаем данные заголовка таблицы
-            IList<IList<Object>> valuesAll = responseTitle.Values; // список списков в виде объектов
 
-            SpreadsheetsResource.ValuesResource.GetRequest request = service.Spreadsheets.Values.Get(sheetURL, rangeData);                        
-            ValueRange response = request.Execute(); // получаем данные всей необходимой выборки
-            IList<IList<Object>> values = response.Values; // список списков в виде объектов
-            
-            foreach (var onevalue in values)
-            {
-                valuesAll.Add(onevalue);
-            }
+        /// <summary>
+        /// Получает первую строку. В ней как правило названия столбцов.
+        /// </summary>
+        /// <param name="sheetUrl"></param>
+        /// <returns>Список списков объектов object, которые представляют данные таблицы</returns>
+        private static IList<IList<object>> GetTitle(string sheetUrl)
+        {
+            var requestTitle = _service.Spreadsheets.Values.Get(sheetUrl, "A1:ZZZ1");
+            var responseTitle = requestTitle.Execute();
+            var titleList = responseTitle.Values;
+            return titleList;
+        }
 
-            return valuesAll;
+
+        /// <summary>
+        /// Получает все данные заданного диапазона.
+        /// </summary>
+        /// <param name="sheetUrl"></param>
+        /// <param name="start"></param>
+        /// <returns>Список списков объектов object, которые представляют данные таблицы</returns>
+        private static IList<IList<object>> GetValues(string sheetUrl, string start)
+        {
+            var rangeData = "A" + start + ":ZZZ"; // Если нужна вся таблица то "A1:ZZZ"
+            var request = _service.Spreadsheets.Values.Get(sheetUrl, rangeData);
+            var response = request.Execute();
+            var values = response.Values;
+            return values;
         }
     }
 }

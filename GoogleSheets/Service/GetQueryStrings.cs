@@ -1,19 +1,24 @@
 ﻿using GoogleSheets.Models;
-using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace GoogleSheets.Service
 {
-    class GetQueryStrings
+    internal static class GetQueryStrings
     {
-        public static QueryStrings GetQuery(IList<IList<Object>> sheetValues)
+
+        /// <summary>
+        /// Генерит insert query для загрузки в SQL
+        /// </summary>
+        /// <param name="sheetValues">данные таблицы</param>
+        /// <returns>QueryStrings - команды SQL для загрузки данныех в БД</returns>
+        public static QueryStrings GetQuery(IList<IList<object>> sheetValues)
         {
-            IList<object> titles = sheetValues[0];
+            var titles = sheetValues[0];
             sheetValues.RemoveAt(0);
 
-            string createTableQuery = GetCreateTableQueryString(titles);
-            List<string> queryList = GetInsertDataQueryString(titles, sheetValues);
-
+            var createTableQuery = GetCreateTableQueryString(titles);
+            var queryList = GetInsertDataQueryString(titles, sheetValues);
             return new QueryStrings(createTableQuery, queryList);
         }
 
@@ -21,21 +26,14 @@ namespace GoogleSheets.Service
         /// <summary>
         /// Метод подготавливает Query строку запроса в SQL для создания таблицы
         /// </summary>
-        /// <param name="titles"></param> это первая строка в excel. обычно там названия столбцов.
-        /// <returns></returns>
-        private static string GetCreateTableQueryString(IList<Object> titles)
+        /// <param name="titles">первая строка в excel. обычно там названия столбцов.</param>
+        /// <returns>Строка создания таблицы в БД</returns>
+        private static string GetCreateTableQueryString(IEnumerable<object> titles)
         {
-            string createTableQuery = "CREATE TABLE DataFromGoogleSheet(";
+            var createTableQuery = titles.Aggregate("CREATE TABLE DataFromGoogleSheet(", (current, title) => current + ("[" + title + "]" + " NVARCHAR(MAX), "));
 
-            foreach (var title in titles)
-            {
-                createTableQuery += "[" + title + "]" + " NVARCHAR(MAX), ";
-            }
-
-            createTableQuery = createTableQuery.Trim(new char[] { ',', ' ' });
+            createTableQuery = createTableQuery.Trim(',', ' ');
             createTableQuery += ")";
-
-            //string createTableQuery = "CREATE TABLE DataFromGoogleSheet([Название] NVARCHAR(MAX), [Промокод] NVARCHAR(MAX), [адрес] NVARCHAR(MAX), [скидка] NVARCHAR(MAX), [Тип] NVARCHAR(MAX), [Краткое описание ] NVARCHAR(MAX), [Лучшее предложение] NVARCHAR(MAX), [Контактный номер телефона] NVARCHAR(MAX), [Часы работы] NVARCHAR(MAX), [Координаты широта] NVARCHAR(MAX), [Координаты долгота] NVARCHAR(MAX))";
 
             return createTableQuery;
         }
@@ -44,20 +42,20 @@ namespace GoogleSheets.Service
         /// <summary>
         /// Метод собирает в список SQL INSERT QUERY строки по 1000 строк и в конце суёт остатки. MS SQL больше 1000 за раз не ест.
         /// </summary>
-        /// <param name="titles"></param> это первая строка в excel. обычно там названия столбцов.
-        /// <param name="sheetValues"></param> это все оставшиеся строки с данными
-        /// <returns></returns>
-        private static List<string> GetInsertDataQueryString(IList<Object> titles, IList<IList<Object>> sheetValues)
+        /// <param name="titles">первая строка в excel. обычно там названия столбцов.</param>
+        /// <param name="sheetValues">все оставшиеся строки с данными</param>
+        /// <returns>Строки вставки данных в таблицу БД</returns>
+        private static List<string> GetInsertDataQueryString(IList<object> titles, IList<IList<object>> sheetValues)
         {
-            List<string> eachThousandRows = new List<string>();
-            int count = 0;
-            string createTableQuery = "";
+            var eachThousandRows = new List<string>();
+            var count = 0;
+            var createTableQuery = "";
 
             while (sheetValues.Count > 0)
             {
                 if (count > 999)
                 {
-                    createTableQuery = createTableQuery.Trim(new char[] { ',', '(' });
+                    createTableQuery = createTableQuery.Trim(',', '(');
                     eachThousandRows.Add(createTableQuery);
                     createTableQuery = "";
                     count = 0;
@@ -66,20 +64,15 @@ namespace GoogleSheets.Service
                 if (count == 0)
                 {
                     createTableQuery += "INSERT INTO DataFromGoogleSheet(";
-                    foreach (var title in titles)
-                    {
-                        createTableQuery += "[" + title + "], ";
-                    }
-                    createTableQuery = createTableQuery.Trim(new char[] { ',', ' ' });
+                    createTableQuery = titles.Aggregate(createTableQuery, (current, title) => current + ("[" + title + "], "));
+
+                    createTableQuery = createTableQuery.Trim(',', ' ');
                     createTableQuery += ") VALUES (";
                 }
 
-                foreach (string onecell in sheetValues[0])
-                {
-                    string temponecell = onecell.Replace("'", " ");
-                    createTableQuery += "'" + temponecell + "', ";
-                }
-                createTableQuery = createTableQuery.Trim(new char[] { ',', ' ' });
+                createTableQuery = (from string onecell in sheetValues[0] select onecell.Replace("'", " ")).Aggregate(createTableQuery, (current, temponecell) => current + ("'" + temponecell + "', "));
+
+                createTableQuery = createTableQuery.Trim(',', ' ');
                 createTableQuery += "),(";
                 createTableQuery = createTableQuery.Replace("(),", "");
 
@@ -87,7 +80,7 @@ namespace GoogleSheets.Service
                 count++;
             }
 
-            createTableQuery = createTableQuery.Trim(new char[] { ',', '(' });
+            createTableQuery = createTableQuery.Trim(',', '(');
             eachThousandRows.Add(createTableQuery);
 
             return eachThousandRows;

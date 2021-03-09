@@ -2,15 +2,15 @@
 
 namespace GoogleSheets.Models
 {
-    class QueryStrings
+    internal class QueryStrings
     {
-        public string createTableQuery { get; set; }
-        public List<string> insertQuery { get; set; }
+        public string CreateTableQuery { get; }
+        public List<string> InsertQuery { get; }
 
         public QueryStrings(string createQuery, List<string> insertQuery)
         {
-            this.createTableQuery = createQuery;
-            this.insertQuery = insertQuery;
+            CreateTableQuery = createQuery;
+            InsertQuery = insertQuery;
         }
     }
 }

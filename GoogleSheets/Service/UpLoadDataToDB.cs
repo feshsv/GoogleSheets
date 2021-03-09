@@ -1,26 +1,30 @@
 ﻿using GoogleSheets.Models;
 using System;
 using System.Data.SqlClient;
+using System.Linq;
 
 namespace GoogleSheets.Service
 {
-    class UpLoadDataToDB
+    internal static class UpLoadDataToDb
     {
+        /// <summary>
+        /// Грузит данные в БД.
+        /// </summary>
+        /// <param name="query">Объект со строками SQL запросов</param>
+        /// <param name="connectionString"></param>
         public static void UpLoad(QueryStrings query, string connectionString)
         {
             try
             {
-                using (SqlConnection sqlConnect = new SqlConnection(connectionString))
+                using (var sqlConnect = new SqlConnection(connectionString))
                 {
                     sqlConnect.Open();
-                    SqlCommand sqlCommandToCreateTable = new SqlCommand(query.createTableQuery, sqlConnect);
+                    var sqlCommandToCreateTable = new SqlCommand(query.CreateTableQuery, sqlConnect);
                     sqlCommandToCreateTable.ExecuteNonQuery();
 
-                    foreach (var onequery in query.insertQuery)
+                    foreach (var sqlCsqlCommandToInsertData in query.InsertQuery.Select(onequery => new SqlCommand(onequery, sqlConnect)))
                     {
-                       SqlCommand sqlCsqlCommandToInsertData = new SqlCommand(onequery, sqlConnect);
-                       sqlCsqlCommandToInsertData.ExecuteNonQuery();
-                        
+                        sqlCsqlCommandToInsertData.ExecuteNonQuery();
                     }
                 }
                 Console.WriteLine("\n******************* ALL DATA LOADED INTO DATABASE SUCCESSFULLY *******************\n\n");

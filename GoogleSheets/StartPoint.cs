@@ -3,18 +3,17 @@
 
 namespace GoogleSheets
 {
-    class StartPoint
+    internal static class StartPoint
     {
-        static void Main(string[] args)
+        static void Main()
         {
-            string sheetURL = "1z8SGeln_VLiyElvcZyqO-me1SH0J4YE_rOG7UYGN7zQ";// это адрес таблицы из URL https://docs.google.com/spreadsheets/d/1z8SGeln_VLiyElvcZyqO-me1SH0J4YE_rOG7UYGN7zQ/edit#gid=1823715284
-            string connectionString = "Data Source=SOMESERVER\\SQLEXPRESS;Initial Catalog=Somedatabace;Integrated Security=True";
-            string startRow = "1"; // с какой строки читать данные? (включительно)
+            const string sheetUrl = "1NGbnQWozsCfE90Kq45dD83E7SApfG9EFNcVSYXdnNTY"; // это адрес таблицы из URL https://docs.google.com/spreadsheets/d/1z8SGeln_VLiyElvcZyqO-me1SJ3J4YE_rOG7UYGN7zQ/edit#gid=1823715284
+            const string connectionString = "Data Source=MSK-FESHUKOVSV\\SQLEXPRESS;Initial Catalog=Autoservice;Integrated Security=True";
+            const string startRow = "1"; // с какой строки читать данные? (включительно)
 
-            //List<OneLineSetFromSheet> listOfOneLineObjects = ParseValToObj.GetObjectsListLineByLine(values); // класс ParseValToObj подходит только для конкретного случая. Для загрузки данных без ограничений он не подходит (оставил для истории)
-            //UpLoadToDB.UpLoad(listOfOneLineObjects, connectionString); // ввиду того, что класс ParseValToObj из Service больше не нужен, и класс UpLoadToDB из Service не актуален, как и OneLineSetFromSheet из Models (оставил для истории)
-
-            UpLoadDataToDB.UpLoad(GetQueryStrings.GetQuery(GetSheetValues.GetValueList(sheetURL, startRow)), connectionString);
+            var valueList = GetSheetValues.GetValueList(sheetUrl, startRow);
+            var dataToLoad = GetQueryStrings.GetQuery(valueList);
+            UpLoadDataToDb.UpLoad(dataToLoad, connectionString);
         }
     }
 }

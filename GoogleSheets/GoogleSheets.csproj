@@ -67,15 +67,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Models\OneLineSetFromSheet_do_not_use.cs" />
     <Compile Include="Models\QueryStrings.cs" />
     <Compile Include="Service\GetQueryStrings.cs" />
     <Compile Include="Service\UpLoadDataToDB.cs" />
     <Compile Include="StartPoint.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Service\GetSheetValues.cs" />
-    <Compile Include="Service\ParseValToObj_do_not_use.cs" />
-    <Compile Include="Service\UpLoadToDB_do_not_use.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
