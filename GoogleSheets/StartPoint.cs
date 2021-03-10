@@ -1,4 +1,5 @@
-﻿using GoogleSheets.Service;
+﻿using System;
+using GoogleSheets.Service;
 
 
 namespace GoogleSheets
@@ -11,9 +12,14 @@ namespace GoogleSheets
             const string connectionString = "Data Source=MSK-FESHUKOVSV\\SQLEXPRESS;Initial Catalog=Autoservice;Integrated Security=True";
             const string startRow = "1"; // с какой строки читать данные? (включительно)
 
-            var valueList = GetSheetValues.GetValueList(sheetUrl, startRow);
-            var dataToLoad = GetQueryStrings.GetQuery(valueList);
-            UpLoadDataToDb.UpLoad(dataToLoad, connectionString);
+            try
+            {
+                UpLoadDataToDb.UpLoad(QueryStringsUtils.GetQuery(GoogleSheetsService.GetValueList(sheetUrl, startRow)), connectionString);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message + "\n\n" + e.StackTrace);
+            }
         }
     }
 }

@@ -68,11 +68,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Models\QueryStrings.cs" />
-    <Compile Include="Service\GetQueryStrings.cs" />
+    <Compile Include="Service\QueryStringsUtils.cs" />
     <Compile Include="Service\UpLoadDataToDB.cs" />
     <Compile Include="StartPoint.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Service\GetSheetValues.cs" />
+    <Compile Include="Service\GoogleSheetsService.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

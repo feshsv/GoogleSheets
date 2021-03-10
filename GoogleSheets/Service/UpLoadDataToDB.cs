@@ -14,25 +14,18 @@ namespace GoogleSheets.Service
         /// <param name="connectionString"></param>
         public static void UpLoad(QueryStrings query, string connectionString)
         {
-            try
+            using (var sqlConnect = new SqlConnection(connectionString))
             {
-                using (var sqlConnect = new SqlConnection(connectionString))
-                {
-                    sqlConnect.Open();
-                    var sqlCommandToCreateTable = new SqlCommand(query.CreateTableQuery, sqlConnect);
-                    sqlCommandToCreateTable.ExecuteNonQuery();
+                sqlConnect.Open();
+                var sqlCommandToCreateTable = new SqlCommand(query.CreateTableQuery, sqlConnect);
+                sqlCommandToCreateTable.ExecuteNonQuery();
 
-                    foreach (var sqlCsqlCommandToInsertData in query.InsertQuery.Select(onequery => new SqlCommand(onequery, sqlConnect)))
-                    {
-                        sqlCsqlCommandToInsertData.ExecuteNonQuery();
-                    }
+                foreach (var sqlMsqlCommandToInsertData in query.InsertQuery.Select(rquery => new SqlCommand(rquery, sqlConnect)))
+                {
+                    sqlMsqlCommandToInsertData.ExecuteNonQuery();
                 }
-                Console.WriteLine("\n******************* ALL DATA LOADED INTO DATABASE SUCCESSFULLY *******************\n\n");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("\n=================== Something wrong in SQL connection and upload block ===================\n\n" + ex.Message + "\n" + ex.StackTrace);
-            }
+            Console.WriteLine("\n******************* ALL DATA LOADED INTO DATABASE SUCCESSFULLY *******************\n\n");
         }
     }
 }
